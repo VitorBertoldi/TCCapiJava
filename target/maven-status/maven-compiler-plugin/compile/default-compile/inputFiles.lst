@@ -1,0 +1,12 @@
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/TccapiApplication.java
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/controller/EmployeeController.java
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/controller/PayrollController.java
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/controller/PayrollEntryController.java
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/domain/model/Employee.java
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/domain/model/Payroll.java
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/domain/model/PayrollEntry.java
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/repository/EmployeeRepository.java
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/repository/PayrollEntryRepository.java
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/repository/PayrollRepository.java
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/service/PayrollCalculator.java
+/Users/vitorbertoldi/Documents/PUCPR/7 periodo/TCC/tccApiJava/src/main/java/com/tcc/tccapi/service/PayrollService.java
