@@ -1,7 +1,10 @@
 package com.tcc.tccapi.service;
 
-import com.tcc.tccapi.domain.model.*;
-import com.tcc.tccapi.repository.*;
+import com.tcc.tccapi.domain.model.Employee;
+import com.tcc.tccapi.domain.model.Payroll;
+import com.tcc.tccapi.domain.model.PayrollEntry;
+import com.tcc.tccapi.repository.PayrollEntryRepository;
+import com.tcc.tccapi.repository.PayrollRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,33 +12,53 @@ import java.util.List;
 
 @Service
 public class PayrollService {
+
     private final PayrollEntryRepository entryRepo;
     private final PayrollRepository payrollRepo;
     private final PayrollCalculator calculator;
 
-    public PayrollService(PayrollEntryRepository e, PayrollRepository p, PayrollCalculator c) {
-        this.entryRepo = e; this.payrollRepo = p; this.calculator = c;
+    public PayrollService(PayrollEntryRepository entryRepo,
+                          PayrollRepository payrollRepo,
+                          PayrollCalculator calculator) {
+        this.entryRepo = entryRepo;
+        this.payrollRepo = payrollRepo;
+        this.calculator = calculator;
     }
 
+    /**
+     * Process payroll for a given period.
+     * Runs inside a single transaction to avoid lock wait issues.
+     * Uses saveAll for batch inserts/updates.
+     */
     @Transactional
     public List<Payroll> processPeriod(String period) {
-        var entries = entryRepo.findByPeriod(period);
+        // Fetch entries for this period
+        List<PayrollEntry> entries = entryRepo.findByPeriod(period);
 
-        return entries.stream().map(in -> {
-            var e = in.getEmployee();
-            var r = calculator.compute(e, in);
+        // Build payrolls (skip if already processed for employee+period)
+        List<Payroll> payrolls = entries.stream()
+                .map(entry -> {
+                    Employee employee = entry.getEmployee();
 
-            var payroll = payrollRepo.findByEmployee_IdAndPeriod(e.getId(), period)
-                    .orElseGet(Payroll::new);
+                    // Check if already processed
+                    Payroll payroll = payrollRepo.findByEmployee_IdAndPeriod(employee.getId(), period)
+                            .orElseGet(Payroll::new);
 
-            payroll.setEmployee(e);
-            payroll.setPeriod(period);
-            payroll.setGrossSalary(r.gross());
-            payroll.setInss(r.inss());
-            payroll.setIncomeTax(r.irrf());
-            payroll.setNetSalary(r.net());
+                    // Compute salaries
+                    var result = calculator.compute(employee, entry);
 
-            return payrollRepo.save(payroll);
-        }).toList();
+                    payroll.setEmployee(employee);
+                    payroll.setPeriod(period);
+                    payroll.setGrossSalary(result.gross());
+                    payroll.setInss(result.inss());
+                    payroll.setIncomeTax(result.irrf());
+                    payroll.setNetSalary(result.net());
+
+                    return payroll;
+                })
+                .toList();
+
+        // Save all in batch (configured via application.properties)
+        return payrollRepo.saveAll(payrolls);
     }
 }
