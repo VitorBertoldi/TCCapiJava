@@ -8,6 +8,7 @@ import com.tcc.tccapi.repository.PayrollRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -85,5 +86,42 @@ public class PayrollService {
                 })
                 .toList();
     }
+
+    @Transactional(readOnly = true)
+    public List<Payroll> stressFake(int count, String period) {
+        // Gera dados artificiais (sem buscar no banco)
+        return java.util.stream.IntStream.range(0, count)
+                .mapToObj(i -> {
+                    // Fake employee
+                    Employee employee = new Employee();
+                    employee.setId((long) i);
+                    employee.setName("Employee " + i);
+                    employee.setBaseSalary(BigDecimal.valueOf(3000.0 + (i % 5) * 500)); // 3000–5000
+                    employee.setDependents(i % 3);
+
+                    // Fake entry
+                    PayrollEntry entry = new PayrollEntry();
+                    entry.setEmployee(employee);
+                    entry.setPeriod(period);
+                    entry.setOvertimeHours(BigDecimal.valueOf((double) (i % 10)));
+                    entry.setBonus(BigDecimal.valueOf((double) (i % 300)));
+                    entry.setDiscounts(BigDecimal.valueOf((double) (i % 200)));
+
+                    // Calcula
+                    var result = calculator.compute(employee, entry);
+
+                    Payroll payroll = new Payroll();
+                    payroll.setEmployee(employee);
+                    payroll.setPeriod(period);
+                    payroll.setGrossSalary(result.gross());
+                    payroll.setInss(result.inss());
+                    payroll.setIncomeTax(result.irrf());
+                    payroll.setNetSalary(result.net());
+
+                    return payroll;
+                })
+                .toList();
+    }
+
 
 }

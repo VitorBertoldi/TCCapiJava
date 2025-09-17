@@ -38,4 +38,13 @@ public class PayrollController {
     public List<Payroll> stress(@RequestParam String period){
         return service.stressPeriod(period);
     }
+
+    // 🔹 Novo endpoint fake (gera dados em memória)
+    @GetMapping("/stress/fake")
+    public List<Payroll> stressFake(
+            @RequestParam(defaultValue = "1000") int count,
+            @RequestParam String period
+    ) {
+        return service.stressFake(count, period);
+    }
 }
