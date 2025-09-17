@@ -61,4 +61,29 @@ public class PayrollService {
         // Save all in batch (configured via application.properties)
         return payrollRepo.saveAll(payrolls);
     }
+
+    @Transactional(readOnly = true)
+    public List<Payroll> stressPeriod(String period) {
+        // Fetch entries para o período
+        List<PayrollEntry> entries = entryRepo.findByPeriod(period);
+
+        // Apenas calcula, não persiste
+        return entries.stream()
+                .map(entry -> {
+                    Employee employee = entry.getEmployee();
+                    var result = calculator.compute(employee, entry);
+
+                    Payroll payroll = new Payroll();
+                    payroll.setEmployee(employee);
+                    payroll.setPeriod(period);
+                    payroll.setGrossSalary(result.gross());
+                    payroll.setInss(result.inss());
+                    payroll.setIncomeTax(result.irrf());
+                    payroll.setNetSalary(result.net());
+
+                    return payroll;
+                })
+                .toList();
+    }
+
 }

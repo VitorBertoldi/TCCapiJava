@@ -7,12 +7,15 @@ import com.tcc.tccapi.service.PayrollService;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
-@RestController @RequestMapping("/payrolls")
+@RestController
+@RequestMapping("/payrolls")
 public class PayrollController {
     private final PayrollRepository repo;
     private final PayrollService service;
+
     public PayrollController(PayrollRepository repo, PayrollService service){
-        this.repo = repo; this.service = service;
+        this.repo = repo;
+        this.service = service;
     }
 
     @PostMapping("/process")
@@ -20,6 +23,19 @@ public class PayrollController {
         return service.processPeriod(period);
     }
 
-    @GetMapping public List<Payroll> all(){ return repo.findAll(); }
-    @GetMapping("/period/{p}") public List<Payroll> byPeriod(@PathVariable("p") String period){ return repo.findByPeriod(period); }
+    @GetMapping
+    public List<Payroll> all(){
+        return repo.findAll();
+    }
+
+    @GetMapping("/period/{p}")
+    public List<Payroll> byPeriod(@PathVariable("p") String period){
+        return repo.findByPeriod(period);
+    }
+
+    // 🔹 Novo endpoint apenas para stress test (não persiste no banco)
+    @GetMapping("/stress")
+    public List<Payroll> stress(@RequestParam String period){
+        return service.stressPeriod(period);
+    }
 }
