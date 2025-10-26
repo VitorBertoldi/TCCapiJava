@@ -1,127 +1,67 @@
 package com.tcc.tccapi.service;
 
-import com.tcc.tccapi.domain.model.Employee;
-import com.tcc.tccapi.domain.model.Payroll;
-import com.tcc.tccapi.domain.model.PayrollEntry;
-import com.tcc.tccapi.repository.PayrollEntryRepository;
-import com.tcc.tccapi.repository.PayrollRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
+
+import org.springframework.stereotype.Service;
 
 @Service
 public class PayrollService {
 
-    private final PayrollEntryRepository entryRepo;
-    private final PayrollRepository payrollRepo;
-    private final PayrollCalculator calculator;
+    private final PayrollCalculator payrollCalculator;
 
-    public PayrollService(PayrollEntryRepository entryRepo,
-                          PayrollRepository payrollRepo,
-                          PayrollCalculator calculator) {
-        this.entryRepo = entryRepo;
-        this.payrollRepo = payrollRepo;
-        this.calculator = calculator;
+    public PayrollService(PayrollCalculator payrollCalculator) {
+        this.payrollCalculator = payrollCalculator;
     }
 
-    /**
-     * Process payroll for a given period.
-     * Runs inside a single transaction to avoid lock wait issues.
-     * Uses saveAll for batch inserts/updates.
-     */
-    @Transactional
-    public List<Payroll> processPeriod(String period) {
-        // Fetch entries for this period
-        List<PayrollEntry> entries = entryRepo.findByPeriod(period);
+    public List<PayrollResult> generatePayrolls(int count, String period) {
+        int safeCount = Math.max(count, 1);
+        List<PayrollResult> results = new ArrayList<>(safeCount);
 
-        // Build payrolls (skip if already processed for employee+period)
-        List<Payroll> payrolls = entries.stream()
-                .map(entry -> {
-                    Employee employee = entry.getEmployee();
+        for (int i = 1; i <= safeCount; i++) {
+            EmployeeSnapshot snapshot = buildEmployeeSnapshot(i);
+            PayrollCalculator.CalculationResult calculation = payrollCalculator.calculate(
+                    snapshot.baseSalary,
+                    snapshot.overtimeHours,
+                    snapshot.bonus,
+                    snapshot.discounts,
+                    snapshot.dependents);
 
-                    // Check if already processed
-                    Payroll payroll = payrollRepo.findByEmployee_IdAndPeriod(employee.getId(), period)
-                            .orElseGet(Payroll::new);
+            results.add(new PayrollResult(
+                    i,
+                    period,
+                    calculation.grossSalary(),
+                    calculation.inss(),
+                    calculation.incomeTax(),
+                    calculation.netSalary()));
+        }
 
-                    // Compute salaries
-                    var result = calculator.compute(employee, entry);
-
-                    payroll.setEmployee(employee);
-                    payroll.setPeriod(period);
-                    payroll.setGrossSalary(result.gross());
-                    payroll.setInss(result.inss());
-                    payroll.setIncomeTax(result.irrf());
-                    payroll.setNetSalary(result.net());
-
-                    return payroll;
-                })
-                .toList();
-
-        // Save all in batch (configured via application.properties)
-        return payrollRepo.saveAll(payrolls);
+        return results;
     }
 
-    @Transactional(readOnly = true)
-    public List<Payroll> stressPeriod(String period) {
-        // Fetch entries para o período
-        List<PayrollEntry> entries = entryRepo.findByPeriod(period);
-
-        // Apenas calcula, não persiste
-        return entries.stream()
-                .map(entry -> {
-                    Employee employee = entry.getEmployee();
-                    var result = calculator.compute(employee, entry);
-
-                    Payroll payroll = new Payroll();
-                    payroll.setEmployee(employee);
-                    payroll.setPeriod(period);
-                    payroll.setGrossSalary(result.gross());
-                    payroll.setInss(result.inss());
-                    payroll.setIncomeTax(result.irrf());
-                    payroll.setNetSalary(result.net());
-
-                    return payroll;
-                })
-                .toList();
+    private EmployeeSnapshot buildEmployeeSnapshot(int employeeId) {
+        double baseSalary = 1800.0 + (employeeId % 12) * 220.0 + (employeeId % 5) * 47.35;
+        double overtimeHours = (employeeId % 15) * 1.25;
+        double bonus = (employeeId % 7) * 150.5;
+        double discounts = (employeeId % 4) * 95.75;
+        int dependents = employeeId % 3;
+        return new EmployeeSnapshot(baseSalary, overtimeHours, bonus, discounts, dependents);
     }
 
-    @Transactional(readOnly = true)
-    public List<Payroll> stressFake(int count, String period) {
-        // Gera dados artificiais (sem buscar no banco)
-        return java.util.stream.IntStream.range(0, count)
-                .mapToObj(i -> {
-                    // Fake employee
-                    Employee employee = new Employee();
-                    employee.setId((long) i);
-                    employee.setName("Employee " + i);
-                    employee.setBaseSalary(BigDecimal.valueOf(3000.0 + (i % 5) * 500)); // 3000–5000
-                    employee.setDependents(i % 3);
-
-                    // Fake entry
-                    PayrollEntry entry = new PayrollEntry();
-                    entry.setEmployee(employee);
-                    entry.setPeriod(period);
-                    entry.setOvertimeHours(BigDecimal.valueOf((double) (i % 10)));
-                    entry.setBonus(BigDecimal.valueOf((double) (i % 300)));
-                    entry.setDiscounts(BigDecimal.valueOf((double) (i % 200)));
-
-                    // Calcula
-                    var result = calculator.compute(employee, entry);
-
-                    Payroll payroll = new Payroll();
-                    payroll.setEmployee(employee);
-                    payroll.setPeriod(period);
-                    payroll.setGrossSalary(result.gross());
-                    payroll.setInss(result.inss());
-                    payroll.setIncomeTax(result.irrf());
-                    payroll.setNetSalary(result.net());
-
-                    return payroll;
-                })
-                .toList();
+    private record EmployeeSnapshot(
+            double baseSalary,
+            double overtimeHours,
+            double bonus,
+            double discounts,
+            int dependents) {
     }
 
-
+    public record PayrollResult(
+            int employeeId,
+            String period,
+            double grossSalary,
+            double inss,
+            double incomeTax,
+            double netSalary) {
+    }
 }

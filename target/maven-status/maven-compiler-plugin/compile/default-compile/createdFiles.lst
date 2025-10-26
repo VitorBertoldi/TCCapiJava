@@ -1,13 +1,7 @@
-com/tcc/tccapi/domain/model/Employee.class
-com/tcc/tccapi/controller/PayrollEntryController.class
-com/tcc/tccapi/repository/EmployeeRepository.class
-com/tcc/tccapi/repository/PayrollEntryRepository.class
-com/tcc/tccapi/repository/PayrollRepository.class
 com/tcc/tccapi/service/PayrollService.class
-com/tcc/tccapi/service/PayrollCalculator$Result.class
-com/tcc/tccapi/TccapiApplication.class
-com/tcc/tccapi/controller/EmployeeController.class
 com/tcc/tccapi/service/PayrollCalculator.class
-com/tcc/tccapi/domain/model/Payroll.class
 com/tcc/tccapi/controller/PayrollController.class
-com/tcc/tccapi/domain/model/PayrollEntry.class
+com/tcc/tccapi/service/PayrollCalculator$CalculationResult.class
+com/tcc/tccapi/service/PayrollService$PayrollResult.class
+com/tcc/tccapi/service/PayrollService$EmployeeSnapshot.class
+com/tcc/tccapi/TccapiJavaApplication.class
